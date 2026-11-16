@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz Betriebstechnik 1.1–1.5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: eine Spalte für das Handy, Fragekarte mit großen Antwortflächen; Startseite mit QR-Panel für den Beamer */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d3dae2;
+  --accent:#1d5fae; --accent-ink:#ffffff; --accent-soft:#e3edf9;
+  --good:#1f7a43; --good-soft:#e2f3e8; --bad:#b3261e; --bad-soft:#fbe5e3; --warn:#9a6200;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161c; --surface:#1a2129; --ink:#e7ecf1; --muted:#9aa7b4; --line:#2e3944;
+    --accent:#5b9be6; --accent-ink:#0b1420; --accent-soft:#1d2d42;
+    --good:#5cc489; --good-soft:#163323; --bad:#f08178; --bad-soft:#3b1a18; --warn:#e0b257;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161c; --surface:#1a2129; --ink:#e7ecf1; --muted:#9aa7b4; --line:#2e3944;
+  --accent:#5b9be6; --accent-ink:#0b1420; --accent-soft:#1d2d42;
+  --good:#5cc489; --good-soft:#163323; --bad:#f08178; --bad-soft:#3b1a18; --warn:#e0b257;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(34px,7vw,48px)}
+h2{font-size:28px}
+p{margin:0}
+.muted{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.fact{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.fact b{display:block;font-family:var(--display);font-size:28px;line-height:1}
+.fact span{font-size:14px;color:var(--muted)}
+label{font-weight:600}
+input[type=text]{font:inherit;width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+input[type=text]:focus{outline:none;border-color:var(--accent)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:11px 16px;font-weight:600}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row.spread{justify-content:space-between}
+.grow{flex:1}
+.err{color:var(--bad);font-size:15px;min-height:1.2em}
+.qr-card{align-items:center;text-align:center}
+.qr-box{background:#fff;padding:14px;border-radius:12px;width:min(320px,80vw)}
+.qr-box svg{width:100%;height:auto;display:block}
+.url{font-size:13px;word-break:break-all;color:var(--muted)}
+/* Quiz */
+.topbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px;display:flex;flex-direction:column;gap:8px}
+.chip{display:inline-block;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.progress{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.counter{font-variant-numeric:tabular-nums;font-weight:600}
+.qtext{font-size:21px;font-weight:600;line-height:1.35}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:14px;font-weight:500;border-radius:12px;min-height:56px}
+.opt .key{flex:0 0 30px;height:30px;border-radius:8px;display:grid;place-items:center;border:1.5px solid var(--line);font-family:var(--display);font-size:18px}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt[aria-pressed="true"] .key{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px}
+.grid button{padding:6px 0;font-size:14px;font-variant-numeric:tabular-nums}
+.grid button.done{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.grid button.cur{outline:2px solid var(--ink);outline-offset:1px}
+.modal{position:fixed;inset:0;background:rgba(10,15,20,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal.show{display:flex}
+.modal .card{max-width:420px;width:100%}
+/* Ergebnis */
+.score{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.score .big{font-family:var(--display);font-size:64px;line-height:1;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:var(--line);border-radius:99px;overflow:hidden;flex:1;min-width:80px}
+.bar i{display:block;height:100%;background:var(--good)}
+.chap{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:center;font-size:15px}
+.chap .num{font-variant-numeric:tabular-nums;text-align:right}
+.review{display:flex;flex-direction:column;gap:12px}
+.item{border-left:5px solid var(--good);padding:14px 16px}
+.item.wrong{border-left-color:var(--bad)}
+.item .ans{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.tag{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:8px}
+.tag.ok{background:var(--good-soft)}
+.tag.no{background:var(--bad-soft)}
+.tag b{flex:0 0 auto}
+.expl{font-size:15px;color:var(--muted)}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;border-radius:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.hidden{display:none!important}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- START -->
+<main class="wrap" id="v-start">
+  <div class="card">
+    <span class="eyebrow">Industriemeister Metall · Betriebstechnik</span>
+    <h1>Wiederholungsquiz Kapitel 1.1 bis 1.5</h1>
+    <p class="muted">Wissensfragen zum Stoff der letzten Woche: Maschinen, Instandhaltung, Schwachstellen, Energieversorgung, Aufstellen und Inbetriebnahme. Ohne Rechenaufgaben.</p>
+    <div class="facts">
+      <div class="fact"><b id="f-count">0</b><span>Fragen</span></div>
+      <div class="fact"><b>ca. 60</b><span>Minuten</span></div>
+      <div class="fact"><b>1 aus 4</b><span>Antworten je Frage</span></div>
+    </div>
+    <p>Sie können vor- und zurückblättern und Antworten ändern. Erst nach dem Abgeben sehen Sie Ihr Ergebnis und die Berichtigung mit Erklärungen.</p>
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label for="name">Ihr Name</label>
+      <input type="text" id="name" autocomplete="name" placeholder="Vor- und Nachname">
+      <div class="err" id="name-err"></div>
+      <button class="primary" id="btn-start">Quiz starten</button>
+      <button id="btn-resume" class="hidden">Weitermachen, wo ich aufgehört habe</button>
+    </div>
+  </div>
+  <div class="card qr-card" id="qr-card">
+    <span class="eyebrow">Teilnehmen per Handy</span>
+    <h2>QR-Code scannen</h2>
+    <div class="qr-box"><svg width="41mm" height="41mm" version="1.1" viewBox="0 0 41 41" xmlns="http://www.w3.org/2000/svg"><path d="M2,2H3V3H2zM3,2H4V3H3zM4,2H5V3H4zM5,2H6V3H5zM6,2H7V3H6zM7,2H8V3H7zM8,2H9V3H8zM10,2H11V3H10zM11,2H12V3H11zM16,2H17V3H16zM17,2H18V3H17zM18,2H19V3H18zM19,2H20V3H19zM21,2H22V3H21zM22,2H23V3H22zM23,2H24V3H23zM24,2H25V3H24zM25,2H26V3H25zM28,2H29V3H28zM32,2H33V3H32zM33,2H34V3H33zM34,2H35V3H34zM35,2H36V3H35zM36,2H37V3H36zM37,2H38V3H37zM38,2H39V3H38zM2,3H3V4H2zM8,3H9V4H8zM10,3H11V4H10zM11,3H12V4H11zM12,3H13V4H12zM13,3H14V4H13zM14,3H15V4H14zM21,3H22V4H21zM23,3H24V4H23zM25,3H26V4H25zM26,3H27V4H26zM27,3H28V4H27zM28,3H29V4H28zM30,3H31V4H30zM32,3H33V4H32zM38,3H39V4H38zM2,4H3V5H2zM4,4H5V5H4zM5,4H6V5H5zM6,4H7V5H6zM8,4H9V5H8zM10,4H11V5H10zM11,4H12V5H11zM12,4H13V5H12zM13,4H14V5H13zM15,4H16V5H15zM17,4H18V5H17zM18,4H19V5H18zM21,4H22V5H21zM23,4H24V5H23zM24,4H25V5H24zM25,4H26V5H25zM27,4H28V5H27zM29,4H30V5H29zM30,4H31V5H30zM32,4H33V5H32zM34,4H35V5H34zM35,4H36V5H35zM36,4H37V5H36zM38,4H39V5H38zM2,5H3V6H2zM4,5H5V6H4zM5,5H6V6H5zM6,5H7V6H6zM8,5H9V6H8zM14,5H15V6H14zM16,5H17V6H16zM19,5H20V6H19zM23,5H24V6H23zM25,5H26V6H25zM26,5H27V6H26zM27,5H28V6H27zM29,5H30V6H29zM30,5H31V6H30zM32,5H33V6H32zM34,5H35V6H34zM35,5H36V6H35zM36,5H37V6H36zM38,5H39V6H38zM2,6H3V7H2zM4,6H5V7H4zM5,6H6V7H5zM6,6H7V7H6zM8,6H9V7H8zM10,6H11V7H10zM11,6H12V7H11zM13,6H14V7H13zM14,6H15V7H14zM15,6H16V7H15zM16,6H17V7H16zM18,6H19V7H18zM20,6H21V7H20zM21,6H22V7H21zM23,6H24V7H23zM27,6H28V7H27zM30,6H31V7H30zM32,6H33V7H32zM34,6H35V7H34zM35,6H36V7H35zM36,6H37V7H36zM38,6H39V7H38zM2,7H3V8H2zM8,7H9V8H8zM14,7H15V8H14zM15,7H16V8H15zM18,7H19V8H18zM24,7H25V8H24zM25,7H26V8H25zM27,7H28V8H27zM32,7H33V8H32zM38,7H39V8H38zM2,8H3V9H2zM3,8H4V9H3zM4,8H5V9H4zM5,8H6V9H5zM6,8H7V9H6zM7,8H8V9H7zM8,8H9V9H8zM10,8H11V9H10zM12,8H13V9H12zM14,8H15V9H14zM16,8H17V9H16zM18,8H19V9H18zM20,8H21V9H20zM22,8H23V9H22zM24,8H25V9H24zM26,8H27V9H26zM28,8H29V9H28zM30,8H31V9H30zM32,8H33V9H32zM33,8H34V9H33zM34,8H35V9H34zM35,8H36V9H35zM36,8H37V9H36zM37,8H38V9H37zM38,8H39V9H38zM11,9H12V10H11zM13,9H14V10H13zM17,9H18V10H17zM18,9H19V10H18zM19,9H20V10H19zM20,9H21V10H20zM21,9H22V10H21zM22,9H23V10H22zM24,9H25V10H24zM27,9H28V10H27zM29,9H30V10H29zM2,10H3V11H2zM5,10H6V11H5zM6,10H7V11H6zM7,10H8V11H7zM8,10H9V11H8zM9,10H10V11H9zM10,10H11V11H10zM12,10H13V11H12zM14,10H15V11H14zM16,10H17V11H16zM17,10H18V11H17zM23,10H24V11H23zM24,10H25V11H24zM25,10H26V11H25zM29,10H30V11H29zM30,10H31V11H30zM31,10H32V11H31zM34,10H35V11H34zM36,10H37V11H36zM37,10H38V11H37zM38,10H39V11H38zM2,11H3V12H2zM4,11H5V12H4zM5,11H6V12H5zM6,11H7V12H6zM9,11H10V12H9zM12,11H13V12H12zM14,11H15V12H14zM15,11H16V12H15zM16,11H17V12H16zM18,11H19V12H18zM20,11H21V12H20zM26,11H27V12H26zM28,11H29V12H28zM29,11H30V12H29zM31,11H32V12H31zM33,11H34V12H33zM34,11H35V12H34zM36,11H37V12H36zM37,11H38V12H37zM2,12H3V13H2zM3,12H4V13H3zM4,12H5V13H4zM8,12H9V13H8zM9,12H10V13H9zM10,12H11V13H10zM11,12H12V13H11zM15,12H16V13H15zM16,12H17V13H16zM17,12H18V13H17zM18,12H19V13H18zM20,12H21V13H20zM21,12H22V13H21zM22,12H23V13H22zM23,12H24V13H23zM24,12H25V13H24zM25,12H26V13H25zM29,12H30V13H29zM31,12H32V13H31zM32,12H33V13H32zM35,12H36V13H35zM36,12H37V13H36zM38,12H39V13H38zM2,13H3V14H2zM6,13H7V14H6zM10,13H11V14H10zM11,13H12V14H11zM12,13H13V14H12zM15,13H16V14H15zM16,13H17V14H16zM18,13H19V14H18zM19,13H20V14H19zM20,13H21V14H20zM21,13H22V14H21zM22,13H23V14H22zM25,13H26V14H25zM26,13H27V14H26zM29,13H30V14H29zM35,13H36V14H35zM36,13H37V14H36zM37,13H38V14H37zM38,13H39V14H38zM2,14H3V15H2zM3,14H4V15H3zM7,14H8V15H7zM8,14H9V15H8zM10,14H11V15H10zM11,14H12V15H11zM12,14H13V15H12zM13,14H14V15H13zM14,14H15V15H14zM15,14H16V15H15zM16,14H17V15H16zM17,14H18V15H17zM18,14H19V15H18zM20,14H21V15H20zM22,14H23V15H22zM25,14H26V15H25zM26,14H27V15H26zM30,14H31V15H30zM32,14H33V15H32zM35,14H36V15H35zM38,14H39V15H38zM2,15H3V16H2zM4,15H5V16H4zM5,15H6V16H5zM6,15H7V16H6zM7,15H8V16H7zM9,15H10V16H9zM10,15H11V16H10zM12,15H13V16H12zM13,15H14V16H13zM14,15H15V16H14zM17,15H18V16H17zM18,15H19V16H18zM20,15H21V16H20zM23,15H24V16H23zM25,15H26V16H25zM26,15H27V16H26zM28,15H29V16H28zM29,15H30V16H29zM30,15H31V16H30zM31,15H32V16H31zM34,15H35V16H34zM35,15H36V16H35zM2,16H3V17H2zM3,16H4V17H3zM5,16H6V17H5zM8,16H9V17H8zM10,16H11V17H10zM12,16H13V17H12zM13,16H14V17H13zM16,16H17V17H16zM17,16H18V17H17zM20,16H21V17H20zM21,16H22V17H21zM26,16H27V17H26zM28,16H29V17H28zM29,16H30V17H29zM32,16H33V17H32zM34,16H35V17H34zM35,16H36V17H35zM36,16H37V17H36zM37,16H38V17H37zM38,16H39V17H38zM2,17H3V18H2zM3,17H4V18H3zM4,17H5V18H4zM5,17H6V18H5zM9,17H10V18H9zM11,17H12V18H11zM13,17H14V18H13zM15,17H16V18H15zM23,17H24V18H23zM24,17H25V18H24zM26,17H27V18H26zM28,17H29V18H28zM30,17H31V18H30zM31,17H32V18H31zM33,17H34V18H33zM35,17H36V18H35zM36,17H37V18H36zM37,17H38V18H37zM2,18H3V19H2zM4,18H5V19H4zM5,18H6V19H5zM6,18H7V19H6zM7,18H8V19H7zM8,18H9V19H8zM13,18H14V19H13zM14,18H15V19H14zM16,18H17V19H16zM17,18H18V19H17zM19,18H20V19H19zM20,18H21V19H20zM23,18H24V19H23zM24,18H25V19H24zM25,18H26V19H25zM26,18H27V19H26zM27,18H28V19H27zM32,18H33V19H32zM36,18H37V19H36zM4,19H5V20H4zM7,19H8V20H7zM9,19H10V20H9zM10,19H11V20H10zM14,19H15V20H14zM15,19H16V20H15zM16,19H17V20H16zM24,19H25V20H24zM25,19H26V20H25zM29,19H30V20H29zM33,19H34V20H33zM35,19H36V20H35zM36,19H37V20H36zM2,20H3V21H2zM3,20H4V21H3zM6,20H7V21H6zM7,20H8V21H7zM8,20H9V21H8zM9,20H10V21H9zM10,20H11V21H10zM11,20H12V21H11zM13,20H14V21H13zM15,20H16V21H15zM18,20H19V21H18zM21,20H22V21H21zM23,20H24V21H23zM26,20H27V21H26zM27,20H28V21H27zM29,20H30V21H29zM30,20H31V21H30zM32,20H33V21H32zM34,20H35V21H34zM36,20H37V21H36zM38,20H39V21H38zM2,21H3V22H2zM3,21H4V22H3zM5,21H6V22H5zM7,21H8V22H7zM10,21H11V22H10zM14,21H15V22H14zM17,21H18V22H17zM18,21H19V22H18zM20,21H21V22H20zM21,21H22V22H21zM22,21H23V22H22zM24,21H25V22H24zM25,21H26V22H25zM27,21H28V22H27zM34,21H35V22H34zM35,21H36V22H35zM38,21H39V22H38zM2,22H3V23H2zM3,22H4V23H3zM4,22H5V23H4zM5,22H6V23H5zM6,22H7V23H6zM7,22H8V23H7zM8,22H9V23H8zM9,22H10V23H9zM13,22H14V23H13zM15,22H16V23H15zM19,22H20V23H19zM21,22H22V23H21zM22,22H23V23H22zM25,22H26V23H25zM28,22H29V23H28zM30,22H31V23H30zM31,22H32V23H31zM32,22H33V23H32zM33,22H34V23H33zM34,22H35V23H34zM2,23H3V24H2zM4,23H5V24H4zM5,23H6V24H5zM11,23H12V24H11zM14,23H15V24H14zM16,23H17V24H16zM17,23H18V24H17zM19,23H20V24H19zM20,23H21V24H20zM21,23H22V24H21zM25,23H26V24H25zM26,23H27V24H26zM27,23H28V24H27zM29,23H30V24H29zM34,23H35V24H34zM36,23H37V24H36zM2,24H3V25H2zM5,24H6V25H5zM7,24H8V25H7zM8,24H9V25H8zM9,24H10V25H9zM10,24H11V25H10zM11,24H12V25H11zM13,24H14V25H13zM16,24H17V25H16zM17,24H18V25H17zM18,24H19V25H18zM23,24H24V25H23zM25,24H26V25H25zM28,24H29V25H28zM29,24H30V25H29zM32,24H33V25H32zM33,24H34V25H33zM35,24H36V25H35zM37,24H38V25H37zM38,24H39V25H38zM3,25H4V26H3zM4,25H5V26H4zM6,25H7V26H6zM7,25H8V26H7zM9,25H10V26H9zM11,25H12V26H11zM12,25H13V26H12zM13,25H14V26H13zM15,25H16V26H15zM18,25H19V26H18zM20,25H21V26H20zM25,25H26V26H25zM26,25H27V26H26zM29,25H30V26H29zM30,25H31V26H30zM31,25H32V26H31zM32,25H33V26H32zM33,25H34V26H33zM34,25H35V26H34zM35,25H36V26H35zM36,25H37V26H36zM37,25H38V26H37zM2,26H3V27H2zM5,26H6V27H5zM6,26H7V27H6zM8,26H9V27H8zM9,26H10V27H9zM11,26H12V27H11zM13,26H14V27H13zM14,26H15V27H14zM16,26H17V27H16zM17,26H18V27H17zM19,26H20V27H19zM22,26H23V27H22zM23,26H24V27H23zM24,26H25V27H24zM25,26H26V27H25zM26,26H27V27H26zM29,26H30V27H29zM30,26H31V27H30zM32,26H33V27H32zM33,26H34V27H33zM37,26H38V27H37zM2,27H3V28H2zM6,27H7V28H6zM7,27H8V28H7zM11,27H12V28H11zM13,27H14V28H13zM15,27H16V28H15zM16,27H17V28H16zM19,27H20V28H19zM20,27H21V28H20zM21,27H22V28H21zM24,27H25V28H24zM26,27H27V28H26zM27,27H28V28H27zM29,27H30V28H29zM30,27H31V28H30zM34,27H35V28H34zM35,27H36V28H35zM2,28H3V29H2zM3,28H4V29H3zM7,28H8V29H7zM8,28H9V29H8zM11,28H12V29H11zM14,28H15V29H14zM16,28H17V29H16zM17,28H18V29H17zM20,28H21V29H20zM23,28H24V29H23zM24,28H25V29H24zM26,28H27V29H26zM29,28H30V29H29zM31,28H32V29H31zM32,28H33V29H32zM35,28H36V29H35zM36,28H37V29H36zM37,28H38V29H37zM38,28H39V29H38zM2,29H3V30H2zM7,29H8V30H7zM9,29H10V30H9zM10,29H11V30H10zM13,29H14V30H13zM14,29H15V30H14zM18,29H19V30H18zM21,29H22V30H21zM24,29H25V30H24zM28,29H29V30H28zM29,29H30V30H29zM30,29H31V30H30zM31,29H32V30H31zM32,29H33V30H32zM35,29H36V30H35zM36,29H37V30H36zM38,29H39V30H38zM2,30H3V31H2zM5,30H6V31H5zM6,30H7V31H6zM7,30H8V31H7zM8,30H9V31H8zM9,30H10V31H9zM10,30H11V31H10zM12,30H13V31H12zM13,30H14V31H13zM16,30H17V31H16zM17,30H18V31H17zM18,30H19V31H18zM21,30H22V31H21zM22,30H23V31H22zM27,30H28V31H27zM28,30H29V31H28zM29,30H30V31H29zM30,30H31V31H30zM31,30H32V31H31zM32,30H33V31H32zM33,30H34V31H33zM34,30H35V31H34zM36,30H37V31H36zM37,30H38V31H37zM38,30H39V31H38zM10,31H11V32H10zM12,31H13V32H12zM15,31H16V32H15zM17,31H18V32H17zM19,31H20V32H19zM20,31H21V32H20zM21,31H22V32H21zM22,31H23V32H22zM23,31H24V32H23zM24,31H25V32H24zM26,31H27V32H26zM28,31H29V32H28zM29,31H30V32H29zM30,31H31V32H30zM34,31H35V32H34zM36,31H37V32H36zM2,32H3V33H2zM3,32H4V33H3zM4,32H5V33H4zM5,32H6V33H5zM6,32H7V33H6zM7,32H8V33H7zM8,32H9V33H8zM10,32H11V33H10zM11,32H12V33H11zM13,32H14V33H13zM15,32H16V33H15zM17,32H18V33H17zM19,32H20V33H19zM20,32H21V33H20zM21,32H22V33H21zM25,32H26V33H25zM26,32H27V33H26zM27,32H28V33H27zM30,32H31V33H30zM32,32H33V33H32zM34,32H35V33H34zM38,32H39V33H38zM2,33H3V34H2zM8,33H9V34H8zM10,33H11V34H10zM11,33H12V34H11zM12,33H13V34H12zM13,33H14V34H13zM14,33H15V34H14zM15,33H16V34H15zM17,33H18V34H17zM18,33H19V34H18zM23,33H24V34H23zM25,33H26V34H25zM27,33H28V34H27zM28,33H29V34H28zM29,33H30V34H29zM30,33H31V34H30zM34,33H35V34H34zM37,33H38V34H37zM38,33H39V34H38zM2,34H3V35H2zM4,34H5V35H4zM5,34H6V35H5zM6,34H7V35H6zM8,34H9V35H8zM10,34H11V35H10zM11,34H12V35H11zM12,34H13V35H12zM14,34H15V35H14zM18,34H19V35H18zM20,34H21V35H20zM21,34H22V35H21zM22,34H23V35H22zM23,34H24V35H23zM26,34H27V35H26zM28,34H29V35H28zM29,34H30V35H29zM30,34H31V35H30zM31,34H32V35H31zM32,34H33V35H32zM33,34H34V35H33zM34,34H35V35H34zM2,35H3V36H2zM4,35H5V36H4zM5,35H6V36H5zM6,35H7V36H6zM8,35H9V36H8zM10,35H11V36H10zM11,35H12V36H11zM14,35H15V36H14zM16,35H17V36H16zM19,35H20V36H19zM22,35H23V36H22zM23,35H24V36H23zM24,35H25V36H24zM25,35H26V36H25zM28,35H29V36H28zM31,35H32V36H31zM32,35H33V36H32zM36,35H37V36H36zM38,35H39V36H38zM2,36H3V37H2zM4,36H5V37H4zM5,36H6V37H5zM6,36H7V37H6zM8,36H9V37H8zM13,36H14V37H13zM15,36H16V37H15zM24,36H25V37H24zM25,36H26V37H25zM28,36H29V37H28zM30,36H31V37H30zM31,36H32V37H31zM34,36H35V37H34zM35,36H36V37H35zM36,36H37V37H36zM38,36H39V37H38zM2,37H3V38H2zM8,37H9V38H8zM11,37H12V38H11zM17,37H18V38H17zM19,37H20V38H19zM24,37H25V38H24zM25,37H26V38H25zM32,37H33V38H32zM34,37H35V38H34zM35,37H36V38H35zM36,37H37V38H36zM37,37H38V38H37zM38,37H39V38H38zM2,38H3V39H2zM3,38H4V39H3zM4,38H5V39H4zM5,38H6V39H5zM6,38H7V39H6zM7,38H8V39H7zM8,38H9V39H8zM10,38H11V39H10zM13,38H14V39H13zM14,38H15V39H14zM15,38H16V39H15zM16,38H17V39H16zM18,38H19V39H18zM20,38H21V39H20zM21,38H22V39H21zM22,38H23V39H22zM28,38H29V39H28zM30,38H31V39H30zM32,38H33V39H32zM33,38H34V39H33zM35,38H36V39H35zM38,38H39V39H38z" id="qr-path" fill="#000000" fill-opacity="1" fill-rule="nonzero" stroke="none"/></svg></div>
+    <p class="url">https://svenrichter0610-beep.github.io/quiz/betriebstechnik.html</p>
+  </div>
+</main>
+
+<!-- QUIZ -->
+<main class="wrap hidden" id="v-quiz">
+  <div class="topbar">
+    <div class="row spread">
+      <span class="chip" id="q-chap"></span>
+      <span class="counter"><span id="q-pos"></span> · <span id="q-time">0:00</span></span>
+    </div>
+    <div class="progress"><i id="q-prog"></i></div>
+  </div>
+  <div class="card">
+    <p class="qtext" id="q-text"></p>
+    <div class="opts" id="q-opts"></div>
+  </div>
+  <div class="row">
+    <button id="btn-prev">Zurück</button>
+    <button class="primary grow" id="btn-next">Weiter</button>
+  </div>
+  <div class="card">
+    <div class="row spread">
+      <h3 style="font-size:20px">Übersicht</h3>
+      <span class="muted" style="font-size:14px"><span id="q-answered">0</span> beantwortet</span>
+    </div>
+    <div class="grid" id="q-grid"></div>
+    <button id="btn-submit">Quiz abgeben und auswerten</button>
+  </div>
+</main>
+
+<!-- ERGEBNIS -->
+<main class="wrap hidden" id="v-result">
+  <div class="card">
+    <span class="eyebrow" id="r-who"></span>
+    <h1>Ihr Ergebnis</h1>
+    <div class="score">
+      <div class="big" id="r-score"></div>
+      <div class="grow" style="display:flex;flex-direction:column;gap:6px;min-width:180px">
+        <div class="row"><b id="r-pct"></b><span class="muted" id="r-time"></span></div>
+        <div class="bar"><i id="r-bar"></i></div>
+      </div>
+    </div>
+    <div class="chap" id="r-chap"></div>
+  </div>
+  <div class="row spread">
+    <h2>Berichtigung</h2>
+    <div class="seg" role="group" aria-label="Filter">
+      <button id="flt-wrong" aria-pressed="true">Nur falsche</button>
+      <button id="flt-all" aria-pressed="false">Alle</button>
+    </div>
+  </div>
+  <div class="review" id="r-list"></div>
+  <button id="btn-restart">Quiz neu beginnen</button>
+</main>
+
+<div class="modal" id="m-submit" role="dialog" aria-modal="true" aria-labelledby="m-title">
+  <div class="card">
+    <h2 id="m-title">Quiz abgeben?</h2>
+    <p id="m-text"></p>
+    <div class="row">
+      <button id="m-cancel" class="grow">Weiter bearbeiten</button>
+      <button id="m-ok" class="primary grow">Abgeben</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Format: [Kapitel, Frage, [richtig, falsch, falsch, falsch], Erklärung]
+const Q = [
+// ---------- 1.1 Kraft- und Arbeitsmaschinen, Hebe- und Fördermittel ----------
+["1.1","Welche der folgenden Maschinen ist eine Kraftmaschine?",
+ ["Dampfturbine","Kreiselpumpe","Schraubenverdichter","Fräsmaschine"],
+ "Kraftmaschinen wandeln eine Energieform in mechanische Energie um (Motor, Turbine). Pumpen, Verdichter und Werkzeugmaschinen sind Arbeitsmaschinen."],
+["1.1","Wie ergibt sich der Gesamtwirkungsgrad mehrerer hintereinandergeschalteter Maschinen (z. B. Motor – Getriebe – Pumpe)?",
+ ["Die Einzelwirkungsgrade werden multipliziert","Die Einzelwirkungsgrade werden addiert","Es gilt der Mittelwert der Einzelwirkungsgrade","Es gilt der größte Einzelwirkungsgrad"],
+ "η_ges = η₁ · η₂ · η₃ … Der Gesamtwirkungsgrad ist deshalb immer kleiner als der kleinste Einzelwirkungsgrad."],
+["1.1","Was bewirkt ein Getriebe »ins Langsame«?",
+ ["Drehzahl sinkt, Drehmoment steigt, Leistung bleibt bis auf Verluste gleich","Drehzahl sinkt, Drehmoment sinkt, Leistung sinkt","Drehzahl steigt, Drehmoment steigt, Leistung steigt","Drehzahl sinkt, Drehmoment bleibt gleich, Leistung steigt"],
+ "Merksatz: Ein Getriebe ins Langsame senkt die Drehzahl und erhöht das Drehmoment. Die Leistung bleibt (bis auf die Verluste) gleich."],
+["1.1","Welche Wasserturbine setzt man in einem Gebirgs-Speicherkraftwerk mit sehr großer Fallhöhe (über 1.000 m) und kleiner Wassermenge ein?",
+ ["Pelton-Turbine","Kaplan-Turbine","Francis-Turbine","Axial-Turboverdichter"],
+ "Die Pelton-Turbine ist eine Freistrahlturbine: Eine Düse lenkt den Wasserstrahl auf Becher. Sie eignet sich für sehr große Fallhöhen und kleine Wassermengen."],
+["1.1","Welche Turbine ist typisch für ein Flusskraftwerk mit kleiner Fallhöhe und sehr großer Wassermenge?",
+ ["Kaplan-Turbine mit verstellbaren Propellerschaufeln","Pelton-Turbine mit Düse und Bechern","Gasturbine mit Brennkammer","Dampfturbine mit Kessel"],
+ "Die Kaplan-Turbine ist eine Überdruckturbine mit verstellbaren Schaufeln, für ca. 2–60 m Fallhöhe und sehr große Wassermengen."],
+["1.1","Wodurch wird der Kraftstoff im Dieselmotor gezündet?",
+ ["Selbstzündung durch die heiße, hoch verdichtete Luft","Fremdzündung durch eine Zündkerze","Glühkerze in jedem Arbeitstakt","Funkenstrecke im Auslassventil"],
+ "Diesel: Selbstzündung, Verdichtungsverhältnis ca. 14–22. Otto: Fremdzündung durch Zündkerze, ε ca. 8–13."],
+["1.1","Was gibt die Oktanzahl eines Ottokraftstoffs an?",
+ ["Die Klopffestigkeit","Die Zündwilligkeit","Den Heizwert","Den Schwefelgehalt"],
+ "Oktanzahl = Klopffestigkeit (Benzin). Die Cetanzahl beschreibt die Zündwilligkeit von Dieselkraftstoff."],
+["1.1","Welche Leistung steht auf dem Typenschild eines Elektromotors?",
+ ["Die abgegebene mechanische Leistung an der Welle","Die aufgenommene elektrische Leistung","Die Scheinleistung in kVA","Die Blindleistung in kvar"],
+ "Die Typenschildleistung ist immer die abgegebene Wellenleistung. Die aufgenommene Leistung ist um die Verluste größer."],
+["1.1","Warum dreht der Läufer eines Drehstrom-Asynchronmotors langsamer als das Drehfeld?",
+ ["Nur durch den Schlupf wird im Läufer eine Spannung induziert","Weil die Lager bremsen","Weil der Kommutator die Stromrichtung wendet","Weil der Läufer Permanentmagnete hat"],
+ "Ohne Relativbewegung zwischen Feld und Läufer gäbe es keine Induktion und damit kein Drehmoment. Diese Drehzahldifferenz heißt Schlupf."],
+["1.1","Was bewirkt der Stern-Dreieck-Anlauf eines Drehstrommotors?",
+ ["Anlaufstrom und Anlaufmoment sinken auf etwa ein Drittel","Der Anlaufstrom steigt auf das 5- bis 8-Fache","Die Drehzahl wird stufenlos geregelt","Die Spannung wird elektronisch langsam erhöht"],
+ "Anlauf in Stern, nach dem Hochlauf Umschaltung auf Dreieck. Strom und Moment im Anlauf ≈ ⅓. Geeignet für Lüfter und Pumpen ohne große Anlauflast."],
+["1.1","Was bedeutet die Schutzart IP55 bei einem Motor?",
+ ["Staubgeschützt und strahlwassergeschützt","Staubdicht und wasserdicht beim Untertauchen","Schutz gegen Finger und Tropfwasser","Kein Schutz gegen Fremdkörper, aber gegen Spritzwasser"],
+ "1. Ziffer 5 = staubgeschützt, 2. Ziffer 5 = Strahlwasser."],
+["1.1","Welche der fünf Sicherheitsregeln ist die dritte?",
+ ["Spannungsfreiheit feststellen","Freischalten","Erden und kurzschließen","Gegen Wiedereinschalten sichern"],
+ "1. Freischalten, 2. Gegen Wiedereinschalten sichern, 3. Spannungsfreiheit feststellen, 4. Erden und kurzschließen, 5. Benachbarte, unter Spannung stehende Teile abdecken oder abschranken."],
+["1.1","Wer darf eigenverantwortlich Arbeiten an elektrischen Anlagen durchführen und hat dafür Ausbildung, Erfahrung und Normenkenntnis?",
+ ["Die Elektrofachkraft (EFK)","Die elektrotechnisch unterwiesene Person (EuP)","Der elektrotechnische Laie","Jeder Industriemeister Metall"],
+ "Qualifikationsstufen: VEFK (Verantwortung), EFK, EFK für festgelegte Tätigkeiten, EuP (unterwiesen), Laie (keine Arbeiten an elektrischen Anlagen)."],
+["1.1","Was ist der Standard für Industrie-Druckluft?",
+ ["Schraubenverdichter","Roots-Gebläse","Axial-Turboverdichter","Einstufiger Kolbenverdichter"],
+ "Schraubenverdichter (Drehkolben) liefern ca. 5–13 bar, gleichmäßig, mittlere bis große Mengen. Kolbenverdichter: kleine Mengen, hohe Drücke."],
+["1.1","Was ist bei einer Verdrängerpumpe (z. B. Zahnradpumpe) zwingend erforderlich?",
+ ["Ein Druckbegrenzungsventil","Ein Füllen der Pumpe vor jedem Start","Eine Drosselung auf der Saugseite","Ein Frequenzumrichter"],
+ "Verdrängerpumpen fördern bei jeder Umdrehung ein festes Volumen. Gegen einen geschlossenen Schieber würde der Druck unbegrenzt steigen. Daher ist ein Druckbegrenzungsventil Pflicht."],
+["1.1","Worauf müssen Sie bei einer Kreiselpumpe besonders achten?",
+ ["Sie darf nie trocken laufen und muss meist vor dem Start gefüllt werden","Sie darf nie gegen einen geschlossenen Schieber laufen","Sie braucht zwingend ein Druckbegrenzungsventil","Sie ist immer selbstansaugend"],
+ "Kreiselpumpen sind meist nicht selbstansaugend. Trockenlauf zerstört z. B. die Gleitringdichtung."],
+["1.1","Wo liegt der Betriebspunkt einer Kreiselpumpe?",
+ ["Im Schnittpunkt von Pumpenkennlinie und Anlagenkennlinie","Im Maximum der Pumpenkennlinie","Im Punkt des höchsten Förderstroms","Dort, wo die Anlagenkennlinie die y-Achse schneidet"],
+ "Die Pumpe arbeitet dort, wo das, was sie liefert, mit dem übereinstimmt, was die Anlage braucht."],
+["1.1","Warum ist eine Drehzahlregelung mit Frequenzumrichter bei Kreiselpumpen sparsamer als Drosseln?",
+ ["Die Leistung sinkt mit der dritten Potenz der Drehzahl","Die Förderhöhe steigt mit sinkender Drehzahl","Der Förderstrom bleibt bei kleinerer Drehzahl gleich","Beim Drosseln steigt der Wirkungsgrad"],
+ "Affinitätsgesetze: Q ~ n, H ~ n², P ~ n³. 20 % weniger Drehzahl halbiert ungefähr die Leistungsaufnahme. Drosseln vernichtet dagegen Energie."],
+["1.1","Was passiert bei Kavitation in einer Pumpe?",
+ ["Dampfblasen bilden sich im Saugbereich und implodieren im Laufrad","Luft wird über die Gleitringdichtung angesaugt","Das Laufrad läuft gegen das Gehäuse","Das Fördermedium erstarrt in der Druckleitung"],
+ "Druck sinkt unter den Dampfdruck → Dampfblasen → schlagartiger Zusammenfall. Folgen: Lochfraß, Geräusch »wie Kies«, Schwingungen, sinkende Förderhöhe."],
+["1.1","Welche Maßnahme hilft NICHT gegen Kavitation?",
+ ["Auf der Saugseite drosseln","Pumpe tiefer setzen oder Zulauf erhöhen","Saugfilter reinigen, Saugleitung größer wählen","Medium kühlen"],
+ "Gedrosselt wird immer auf der Druckseite. Drosseln auf der Saugseite senkt den Saugdruck weiter und verschlimmert die Kavitation."],
+["1.1","Ab wann ist eine Rundstahlkette ablegereif?",
+ ["Bei einer Längung über 5 %","Bei einer Längung über 15 %","Erst bei einem sichtbaren Bruch eines Glieds","Nach 1.000 Betriebsstunden"],
+ "Ablegereife bei Ketten: Längung über 5 %, Abnahme der Glieddicke über 10 %, Risse, Verformung, Kerben."],
+["1.1","Bei der Prüfung stellen Sie an einer Anschlagkette eine Längung von 6 % fest. Was ist zu tun?",
+ ["Sofort aussondern, unbrauchbar machen und im Prüfbuch dokumentieren","Mit halbierter Tragfähigkeit weiter nutzen","Bis zur nächsten Jahresprüfung weiter nutzen und beobachten","Kette nachschmieren und erneut prüfen"],
+ "Ablegereife Tragmittel werden sofort ausgesondert und unbrauchbar gemacht. Ergebnis im Prüfbuch dokumentieren."],
+["1.1","Welcher Neigungswinkel der Anschlagstränge zur Senkrechten ist unzulässig?",
+ ["Über 60°","Über 30°","Über 15°","Jeder Winkel über 0°"],
+ "Je flacher die Stränge, desto größer die Strangkraft. Über 60° ist verboten. Bei 4 Strängen nur 3 als tragend rechnen."],
+["1.1","Was ist ein Lastaufnahmemittel?",
+ ["Ein Teil, das nicht zum Hebezeug gehört und die Last aufnimmt, z. B. Traverse, Greifer, Vakuumheber","Ein fest mit dem Hebezeug verbundenes Teil wie Haken oder Unterflasche","Ein Verbindungsteil zwischen Last und Haken wie Hebeband oder Schäkel","Die Laufkatze des Brückenkrans"],
+ "Tragmittel: fest am Hebezeug (Haken, Seil). Lastaufnahmemittel: nehmen die Last auf (Traverse, Greifer, Magnet). Anschlagmittel: verbinden Last und Haken (Ketten, Bänder, Schäkel)."],
+["1.1","Wie oft müssen Krane und Hebezeuge mindestens durch eine zur Prüfung befähigte Person geprüft werden?",
+ ["Mindestens jährlich, zusätzlich vor der Inbetriebnahme und nach wesentlichen Änderungen","Nur einmal vor der ersten Inbetriebnahme","Alle fünf Jahre","Nur nach einem Unfall"],
+ "Grundlage: BetrSichV, DGUV Vorschrift 52 und 54. Ergebnisse im Prüfbuch dokumentieren."],
+
+// ---------- 1.2 Instandhaltung planen, einleiten und überwachen ----------
+["1.2","In welchem Bereich der Badewannenkurve ist die Ausfallrate konstant und niedrig?",
+ ["Zufallsausfälle","Frühausfälle","Verschleißausfälle","Montageausfälle"],
+ "Frühausfälle (Rate fällt), Zufallsausfälle (konstant, nicht planbar), Verschleißausfälle (Rate steigt mit dem Alter)."],
+["1.2","Was sind typische Ursachen für Frühausfälle?",
+ ["Montage-, Fertigungs- und Werkstofffehler","Verschleiß und Ermüdung","Bedienfehler und Fremdkörper","Alterung der Dichtungen"],
+ "Gegenmaßnahmen: sorgfältige Inbetriebnahme, Einlaufphase, Gewährleistung nutzen."],
+["1.2","Welches Netzwerkgerät verbindet verschiedene Netze, z. B. das Firmennetz mit dem Internet?",
+ ["Router","Switch","Repeater","Access Point"],
+ "Switch: verbindet Geräte im lokalen Netz. Repeater: verstärkt das Signal. Access Point: bindet Geräte per WLAN an."],
+["1.2","Wofür wird ein VPN bei der Fernwartung eingesetzt?",
+ ["Als verschlüsselter Tunnel durch das Internet für sicheren Fernzugriff","Um das WLAN-Signal zu verstärken","Um Geräte im lokalen Netz miteinander zu verbinden","Um Viren auf USB-Sticks zu erkennen"],
+ "VPN = Virtual Private Network. Der Hersteller-Service greift über einen verschlüsselten Tunnel auf die Maschine zu."],
+["1.2","Welches Schutzziel der Netzwerksicherheit bedeutet: »Daten und Programme werden nicht unbemerkt verändert«?",
+ ["Integrität","Vertraulichkeit","Verfügbarkeit","Authentizität"],
+ "Vertraulichkeit: nur Berechtigte lesen. Verfügbarkeit: Systeme stehen bereit. Authentizität: Partner sind echt."],
+["1.2","Was bildet das Fundament des TPM-Hauses?",
+ ["5S: Sortieren, Systematisieren, Säubern, Standardisieren, Selbstdisziplin","Die FMEA","Die Pareto-Analyse","Die Badewannenkurve"],
+ "TPM-Ziel: null Ausfälle, null Fehler, null Unfälle. Kerngedanke: Bediener und Instandhalter sind gemeinsam für die Anlage verantwortlich."],
+["1.2","Welche Grundmaßnahme nach DIN 31051 ist »Keilriemen nachspannen«?",
+ ["Wartung","Inspektion","Instandsetzung","Verbesserung"],
+ "Wartung = Maßnahmen zur Verzögerung des Abbaus des Abnutzungsvorrats: Reinigen, Schmieren, Nachstellen, Ergänzen."],
+["1.2","Welche Grundmaßnahme nach DIN 31051 ist eine Schwingungsmessung an der Spindel?",
+ ["Inspektion","Wartung","Instandsetzung","Verbesserung"],
+ "Inspektion = Feststellen und Beurteilen des Ist-Zustands: Messen, Prüfen, Sichtkontrolle."],
+["1.2","Nach wiederholtem Ausfall wird ein Lager mit Dichtscheiben statt eines offenen Lagers eingebaut. Welche Grundmaßnahme ist das?",
+ ["Verbesserung","Instandsetzung","Wartung","Inspektion"],
+ "Verbesserung = Steigerung der Zuverlässigkeit ohne Änderung der Funktion, z. B. Schwachstelle beseitigen, besseres Bauteil einsetzen."],
+["1.2","Was ist eine direkte Zustandserfassung?",
+ ["Bremsbelagdicke messen","Schwingungen im Betrieb überwachen","Ölanalyse auf Partikel","Stromaufnahme des Motors beobachten"],
+ "Direkt: die Verschleißgröße selbst wird gemessen (Belagdicke, Kettenlängung, Spaltmaß). Indirekt: eine Ersatzgröße (Schwingung, Temperatur, Öl, Strom)."],
+["1.2","Was ist ein Vorteil der indirekten Zustandserfassung?",
+ ["Sie ist im laufenden Betrieb möglich und lässt sich automatisieren","Das Ergebnis ist immer eindeutig","Sie braucht keine Grenzwerte und keine Erfahrung","Sie geht nur nach Demontage"],
+ "Nachteil der indirekten Erfassung: Die Auswertung braucht Erfahrung und Grenzwerte."],
+["1.2","Welche Instandhaltungsstrategie passt zum Druckbehälter der Druckluftanlage?",
+ ["Vorbeugend – wegen gesetzlicher Prüffristen und Sicherheit","Ausfallbedingt – erst nach dem Ausfall reparieren","Gar keine – Druckbehälter verschleißen nicht","Nur nach Bedarf auf Zuruf der Produktion"],
+ "Sicherheitsrelevante Teile und gesetzliche Fristen → vorbeugend. Ausfallbedingt nur bei unkritischen Anlagen wie einem Lüfter im Sozialraum."],
+["1.2","Was kennzeichnet die zustandsorientierte Instandhaltung?",
+ ["Eingriff, wenn Messwerte eine festgelegte Grenze erreichen","Austausch nach festen Intervallen","Instandsetzung erst nach dem Ausfall","Prognose des Ausfallzeitpunkts aus Datentrends mit KI"],
+ "Vorteil: Abnutzungsvorrat gut genutzt, wenig Ausfälle. Nachteil: Messtechnik und Know-how nötig. Die Prognose aus Trends ist die vorausschauende (Predictive) Instandhaltung."],
+["1.2","Wo liegt das Kostenoptimum der Instandhaltung?",
+ ["Im Minimum der Gesamtkosten aus vorbeugender Instandhaltung und Ausfallkosten","Dort, wo die vorbeugende Instandhaltung am billigsten ist","Dort, wo keine Ausfälle mehr auftreten","Im Schnittpunkt mit der Badewannenkurve"],
+ "Mehr Vorbeugung kostet mehr, senkt aber Ausfallkosten. Merke: Zu wenig Instandhaltung ist meist teurer als zu viel."],
+["1.2","Was sagt die Kennzahl MTTR aus?",
+ ["Die mittlere Reparaturdauer – je kleiner, desto besser","Die mittlere Betriebszeit zwischen zwei Ausfällen – je größer, desto besser","Den Anteil geplanter Instandhaltung","Die Instandhaltungskostenrate"],
+ "MTTR = Mean Time To Repair. MTBF = Mean Time Between Failures."],
+["1.2","Aus welchen drei Faktoren setzt sich die OEE (Gesamtanlageneffektivität) zusammen?",
+ ["Verfügbarkeit · Leistungsgrad · Qualitätsrate","MTBF · MTTR · Verfügbarkeit","Kosten · Zeit · Qualität","Wartung · Inspektion · Instandsetzung"],
+ "Verluste: Stillstände (Verfügbarkeit), Kurzstopps und langsamer Takt (Leistungsgrad), Ausschuss und Nacharbeit (Qualitätsrate)."],
+["1.2","Was ist ein Vorteil der dezentralen Instandhaltung?",
+ ["Nah an der Produktion, kurze Reaktionszeit, hohe Anlagenkenntnis","Gute Auslastung und einheitliche Standards","Keine Fixkosten für Personal","Kein Werkzeug muss doppelt vorgehalten werden"],
+ "Nachteile der dezentralen Instandhaltung: schlechtere Auslastung, Doppelvorhaltung von Werkzeug."],
+
+// ---------- 1.3 Schwachstellen, Schäden und Funktionsstörungen ----------
+["1.3","Was ist eine Schwachstelle?",
+ ["Eine Stelle mit überdurchschnittlich häufigen Ausfällen, deren Beseitigung technisch möglich und wirtschaftlich sinnvoll ist","Jede Stelle, an der schon einmal ein Schaden aufgetreten ist","Das Ende der Fähigkeit einer Einheit, ihre Funktion zu erfüllen","Eine kurze, unbeabsichtigte Unterbrechung der Funktion"],
+ "Ausfall = Ende der Funktionsfähigkeit. Störung = unbeabsichtigte, oft kurze Unterbrechung."],
+["1.3","Was besagt das Pareto-Prinzip in der Schwachstellenanalyse?",
+ ["Wenige Ursachen verursachen den Großteil der Ausfälle (80/20-Regel)","Alle Ursachen sind gleich wichtig","Die teuerste Ursache wird immer zuerst behoben","80 % der Ausfälle sind Zufallsausfälle"],
+ "Dort ansetzen, wo die meisten Ausfälle entstehen: größte Hebel zuerst."],
+["1.3","Riffelbildung und Krater auf den Laufbahnen eines Wälzlagers deuten auf welche Ursache hin?",
+ ["Stromdurchgang, z. B. im Umrichterbetrieb","Normales Lebensdauerende","Schwingungen im Stillstand","Falscher Sitz bei der Montage"],
+ "Ermüdung/Pittings: Lebensdauerende. Stillstandsmarkierungen: Schwingungen im Stillstand. Ringbruch: falscher Sitz. Anlauffarben: Schmierstoffmangel."],
+["1.3","Worauf gehen rund 70–80 % aller Hydraulikausfälle zurück?",
+ ["Verschmutztes oder falsches Hydrauliköl","Defekte Magnetspulen","Zu geringer Systemdruck","Fehler in der SPS-Software"],
+ "Darum: Ölreinheit überwachen, Filter tauschen, Ölwechsel nach Analyse oder Herstellerangabe."],
+["1.3","Wie findet man Druckluftleckagen im laufenden Betrieb am besten?",
+ ["Mit einem Ultraschall-Lecksuchgerät","Mit der Wärmebildkamera","Durch Abhören mit dem Stethoskop am Verdichter","Mit dem Manometer am Druckluftbehälter"],
+ "Lecks orten, markieren und z. B. am Wochenende beheben. Leckagen betragen oft 20–30 % der erzeugten Luft."],
+["1.3","Was kann man mit Thermografie (Wärmebildkamera) im laufenden Betrieb erkennen?",
+ ["Heiße Klemmen, überlastete Leitungen und Lagerschäden – berührungslos","Haarrisse im Inneren einer Welle","Die Kettenlängung","Die Ölreinheit im Hydrauliktank"],
+ "Übergangswiderstände an Klemmen erzeugen Wärme und damit Brandgefahr."],
+["1.3","Eine gebrochene Welle zeigt Rastlinien, eine glatte Bruchfläche und eine kleine Restbruchfläche. Welche Schadensart liegt vor?",
+ ["Ermüdungsbruch (Dauerbruch)","Gewaltbruch","Verschleiß durch Abrasion","Thermische Überbeanspruchung"],
+ "Gewaltbruch: zerklüftete Bruchfläche, oft Verformung, z. B. durch Crash. Dauerbruch: wächst über Monate, z. B. durch Kerbwirkung am Absatz."],
+["1.3","Welcher Begriff gehört NICHT zu den 6 M des Ursache-Wirkungs-Diagramms (Ishikawa)?",
+ ["Motivation","Milieu","Messung","Methode"],
+ "Die 6 M: Mensch, Maschine, Methode, Material, Milieu, Messung."],
+["1.3","Wie funktioniert die 5-Why-Methode?",
+ ["Man fragt mehrmals hintereinander »Warum?«, bis die eigentliche Ursache gefunden ist","Man bewertet fünf Fehler mit einer Risikoprioritätszahl","Man sortiert fünf Ursachen nach Häufigkeit","Fünf Mitarbeiter bewerten den Schaden unabhängig voneinander"],
+ "Beispiel aus dem Unterricht: Motor abgeschaltet → Lager schwergängig → trocken gelaufen → Zentralschmierung förderte nicht → Behälter leer, kein Prüfpunkt im Wartungsplan."],
+["1.3","Wofür steht das »E« bei der FMEA-Bewertung (RPZ = A · B · E)?",
+ ["Entdeckungswahrscheinlichkeit","Eintrittshäufigkeit","Entstehungskosten","Einflussgröße"],
+ "A = Auftretenswahrscheinlichkeit, B = Bedeutung, E = Entdeckungswahrscheinlichkeit, je 1–10. Hohe RPZ → Maßnahmen."],
+["1.3","Was geschieht im PDCA-Zyklus des KVP im Schritt »Check«?",
+ ["Die Wirkung der Maßnahme wird mit Kennzahlen geprüft","Die Maßnahme wird als Standard festgeschrieben","Die Schwachstelle wird analysiert und geplant","Die Maßnahme wird im kleinen Rahmen umgesetzt"],
+ "Plan: analysieren und planen. Do: im Kleinen umsetzen. Check: Wirkung prüfen. Act: als Standard festschreiben oder neu planen."],
+["1.3","Was ist das P-F-Intervall?",
+ ["Die Zeit zwischen dem Erkennbarwerden eines Schadens und dem Ausfall","Die Zeit zwischen zwei Inspektionen","Die Zeit vom Ausfall bis zur Reparatur","Die gesamte Lebensdauer eines Bauteils"],
+ "P = Potential Failure, F = Functional Failure. Folgerung: Das Inspektionsintervall muss kürzer sein als das P-F-Intervall."],
+["1.3","Bei welchem Bauteil lohnt sich ein vorzeitiger, vorbeugender Austausch?",
+ ["Bei einem Bremsbelag (Verschleißausfall)","Bei einem Näherungsschalter (Zufallsausfall)","Bei einer neu montierten Elektronikbaugruppe (Frühausfall)","Bei einer Sicherung (Zufallsausfall)"],
+ "Vorzeitig tauschen lohnt sich nur bei ausgeprägtem Verschleißverhalten. Bei Zufallsausfällen besser Ersatzteil bereithalten und MTTR senken."],
+["1.3","Welches Ziel nennt der Rahmenplan für den Eingriffszeitpunkt?",
+ ["Niedrigstmögliche Bauteil- und Ersetzungskosten pro Nutzungsperiode","Der billigste Einzeleingriff","Möglichst seltene Eingriffe","Austausch immer erst nach dem Ausfall"],
+ "Nicht der einzelne Eingriff soll billig sein, sondern die Kosten je Woche, Monat oder Betriebsstunde über die gesamte Nutzung."],
+["1.3","Wann ist Instandsetzen nach Ausfall NICHT sinnvoll?",
+ ["Bei sicherheitsrelevanten Bauteilen wie Bremsen oder Seilen","Wenn das Bauteil billig ist und zufällig ausfällt","Wenn Ersatz redundant vorhanden ist","Wenn keine Folgeschäden entstehen"],
+ "Ebenfalls nicht sinnvoll: Engpassanlagen, hohe Folgeschäden (Getriebe, Spindeln), lange Lieferzeiten."],
+["1.3","Was gilt beim Festlegen des Tauschzeitpunkts nach Wahrscheinlichkeitswerten (Normalverteilung)?",
+ ["Je kleiner das zulässige Ausfallrisiko, desto früher wird getauscht und desto mehr Restlebensdauer wird verschenkt","Je kleiner das Ausfallrisiko, desto später kann getauscht werden","Der Tauschzeitpunkt hängt nicht vom Ausfallrisiko ab","Man tauscht immer genau beim Mittelwert μ"],
+ "Tausch bei μ − 1σ: ca. 16 % vorher ausgefallen, μ − 2σ: ca. 2,3 %, μ − 3σ: ca. 0,1 %."],
+
+// ---------- 1.4 Energieversorgung ----------
+["1.4","Erdgas im Bohrloch ist …",
+ ["Primärenergie","Sekundärenergie","Endenergie","Nutzenergie"],
+ "Primärenergie: in der Natur (Erdgas im Bohrloch). Sekundär: umgewandelt (Strom im Kraftwerk). Endenergie: beim Verbraucher (Heizöl im Tank). Nutzenergie: genutzt (Wärme im Raum)."],
+["1.4","Was ist mit »Energiedienstleistung« gemeint?",
+ ["Das, was der Nutzer eigentlich will, z. B. eine helle Halle oder eine warme Werkstatt","Der Energielieferant mit seinem Kundenservice","Die Ablesung des Stromzählers","Die Wartung der Heizungsanlage"],
+ "Ansatz zum Sparen: dieselbe Dienstleistung mit weniger Energie erreichen."],
+["1.4","Wie viel ist 1 kWh in Megajoule?",
+ ["3,6 MJ","1 MJ","36 MJ","0,36 MJ"],
+ "1 kWh = 3.600 kJ = 3,6 MJ. 1 J = 1 N·m = 1 W·s."],
+["1.4","Wonach richtet sich der Leistungspreis beim Strombezug?",
+ ["Nach der höchsten Viertelstundenleistung im Jahr","Nach der gesamten Jahresarbeit in kWh","Nach dem Leistungsfaktor cos φ","Nach der Anzahl der Zähler"],
+ "Darum Lastmanagement: große Verbraucher nicht gleichzeitig einschalten. Jedes kW Spitze weniger spart den Leistungspreis."],
+["1.4","Womit wird induktive Blindleistung im Betrieb kompensiert?",
+ ["Mit einer Kondensatoranlage","Mit zusätzlichen Drosselspulen","Mit einem Frequenzumrichter an jedem Motor","Mit einer USV"],
+ "Ein besserer cos φ entlastet Netz und Trafo (kleinere Scheinleistung). Netzbetreiber berechnen Blindarbeit meist ab cos φ < 0,9."],
+["1.4","Was ist eine besondere Gefahr bei Photovoltaikanlagen?",
+ ["Gleichspannung bis 1.000 V, die bei Licht nicht abschaltbar ist","Wasserstoff ist hochentzündlich","Stillstandstemperaturen über 150 °C","Eiswurf im Winter"],
+ "Arbeiten nur durch Elektrofachkräfte, Kennzeichnung für die Feuerwehr, DC-Trennschalter. Wasserstoff → Brennstoffzelle, 150 °C → Solarthermie, Eiswurf → Wind."],
+["1.4","Wie hängt die Leistung einer Windkraftanlage von der Windgeschwindigkeit ab?",
+ ["Mit der dritten Potenz (v³)","Linear (v)","Mit dem Quadrat (v²)","Gar nicht – nur von der Rotorgröße"],
+ "Doppelte Windgeschwindigkeit → achtfache Leistung."],
+["1.4","Was ist der Unterschied zwischen USV und Notstromaggregat?",
+ ["Die USV versorgt unterbrechungsfrei, das Notstromaggregat braucht ca. 10–15 s zum Anlaufen","Das Notstromaggregat versorgt unterbrechungsfrei, die USV braucht einige Sekunden","Beide sind dasselbe, nur unterschiedlich groß","Die USV läuft mit Diesel, das Aggregat mit Batterien"],
+ "Die USV überbrückt meist nur bis zum Start des Notstromaggregats oder für ein geordnetes Herunterfahren."],
+["1.4","Welche Temperaturen gelten zum Schutz vor Legionellen in der Warmwasserversorgung?",
+ ["Speicher mindestens 60 °C, Zirkulation mindestens 55 °C","Speicher mindestens 40 °C, Zirkulation mindestens 35 °C","Speicher höchstens 45 °C","Speicher mindestens 90 °C"],
+ "Zusätzlich: Verbrühungsschutz an den Zapfstellen, Stagnation vermeiden."],
+["1.4","Welche Anforderungen gelten für Kesselspeisewasser?",
+ ["Enthärtet und entgast","Gechlort und angesäuert","Ungefiltertes Brunnenwasser","Mit Kühlschmierstoff versetzt"],
+ "Enthärtet, sonst Kesselstein und schlechte Wärmeübertragung. Entgast (Sauerstoff entfernt), sonst Korrosion."],
+["1.4","Welche Aufgabe hat der Druckluftbehälter (Windkessel)?",
+ ["Druckluft speichern, Verbrauchsspitzen ausgleichen und die Schalthäufigkeit des Verdichters senken","Die Druckluft trocknen","Öl in die Druckluft einbringen","Die Luft vor dem Verdichter filtern"],
+ "Am Boden sammelt sich Kondensat. Als Druckbehälter unterliegt er der Prüfpflicht nach BetrSichV."],
+["1.4","In der Lackiererei wird sehr trockene Druckluft benötigt. Welcher Trockner ist geeignet?",
+ ["Adsorptionstrockner (Drucktaupunkt −20 bis −70 °C)","Kältetrockner (Drucktaupunkt ca. +3 °C)","Ein größerer Windkessel","Ein Nachkühler ohne Trockner"],
+ "Kältetrockner sind Standard für Werkstatt und Fertigung. Für Lackiererei, Lebensmittel und Außenleitungen bei Frost: Adsorptionstrockner."],
+["1.4","Wie werden Abgänge vom Druckluftnetz zu den Verbrauchern verlegt?",
+ ["Nach oben (Schwanenhals), damit kein Kondensat in die Verbraucherleitung läuft","Nach unten, damit das Kondensat abfließt","Waagerecht ohne Gefälle","Beliebig, Kondensat spielt keine Rolle"],
+ "Weitere Regeln: Gefälle ca. 1–2 % in Strömungsrichtung, Kondensatsammler an Tiefpunkten, Ringleitung, Kennzeichnung grau."],
+["1.4","Wie viel Energie spart man etwa, wenn der Druckluft-Netzdruck um 1 bar gesenkt wird?",
+ ["Ca. 6–8 %","Ca. 1 %","Ca. 25 %","Gar nichts"],
+ "Netzdruck so niedrig wie möglich halten. Druckverlust vom Verdichter bis zum Verbraucher höchstens ca. 0,1 bar."],
+["1.4","Was ist bei Gasgeruch im Gebäude richtig?",
+ ["Keine Schalter betätigen, Absperrhahn schließen, lüften, Gebäude verlassen, von außen Notdienst rufen","Licht einschalten, um das Leck zu suchen","Sofort im Gebäude mit dem Handy die Feuerwehr anrufen","Fenster geschlossen halten, damit sich das Gas nicht verteilt"],
+ "Jeder Funke (Schalter, Klingel, Handy) kann eine Explosion auslösen."],
+
+// ---------- 1.5 Aufstellen und Inbetriebnehmen ----------
+["1.5","Wie lange muss ein Betonfundament ungefähr aushärten, bevor es voll belastet wird?",
+ ["Ca. 28 Tage","Ca. 2 Tage","Ca. 1 Woche","Ca. 6 Monate"],
+ "Die Aushärtezeit muss in der Terminplanung der Aufstellung berücksichtigt werden."],
+["1.5","Wann wird ein vom Hallenboden getrenntes Fundament (mit Fuge) gebaut?",
+ ["Bei Pressen und Schmiedehämmern, damit Schwingungen nicht weitergeleitet werden","Bei allen leichten Maschinen","Nur bei Maschinen im Freien","Wenn die Maschine keinen Stromanschluss braucht"],
+ "Aktive Schwingungsisolierung: Schwingungen der Maschine nicht weitergeben. Passive: Präzisionsmaschine vor Schwingungen der Umgebung schützen."],
+["1.5","Welcher typische Montagefehler führt dazu, dass eine Maschine verspannt steht?",
+ ["Die Anker wurden vergossen, bevor die Maschine ausgerichtet war","Das Montageprotokoll wurde ausgefüllt","Die Kupplung wurde mit Laser ausgerichtet","Die Transportsicherung wurde entfernt"],
+ "Erst ausrichten, dann vergießen. Weitere typische Fehler: Kupplung nicht ausgerichtet, Transportsicherung vergessen."],
+["1.5","Ab welchem Tages-Lärmexpositionspegel MUSS Gehörschutz getragen werden?",
+ ["85 dB(A) (oberer Auslösewert)","80 dB(A) (unterer Auslösewert)","70 dB(A)","100 dB(A)"],
+ "Ab 80 dB(A): Gehörschutz bereitstellen, Vorsorge anbieten. Ab 85 dB(A): Tragepflicht, Lärmbereich kennzeichnen, Pflichtvorsorge, Lärmminderungsprogramm."],
+["1.5","Zwei gleich laute Maschinen laufen nebeneinander. Um wie viel steigt der Schallpegel gegenüber einer Maschine?",
+ ["Um 3 dB","Um 6 dB","Um 10 dB","Er verdoppelt sich"],
+ "Pegel werden nicht addiert. Doppelter Abstand: −6 dB. +10 dB empfindet man als doppelt so laut."],
+["1.5","In welcher Rangfolge sind Maßnahmen gegen Lärm zu treffen?",
+ ["Technisch vor organisatorisch vor persönlich","Persönlich vor organisatorisch vor technisch","Organisatorisch vor persönlich vor technisch","Die Reihenfolge ist frei wählbar"],
+ "Erst leisere Maschine, Kapselung, Schalldämpfer, Abstand – dann Organisation – zuletzt Gehörschutz (STOP-Prinzip)."],
+["1.5","In welchem Gebiet gelten nach TA Lärm nachts dieselben Immissionsrichtwerte wie tagsüber?",
+ ["Industriegebiet","Gewerbegebiet","Allgemeines Wohngebiet","Mischgebiet"],
+ "Industriegebiet: 70 dB(A) tags und nachts. In allen anderen Gebieten gelten nachts deutlich strengere Werte."],
+["1.5","Wer erstellt das Lastenheft und welche Frage beantwortet es?",
+ ["Der Auftraggeber – WAS soll die Maschine leisten?","Der Auftragnehmer – WIE wird es umgesetzt?","Der Auftraggeber – WIE wird es umgesetzt?","Der Lieferant – WAS kostet die Maschine?"],
+ "Pflichtenheft: Auftragnehmer, WIE. Es ist Vertragsgrundlage für die Abnahme: Was nicht drinsteht, kann nicht eingefordert werden."],
+["1.5","Was erhält eine unvollständige Maschine (z. B. Roboter ohne Steuerung) vom Hersteller?",
+ ["Eine Einbauerklärung und Montageanleitung, aber kein CE-Kennzeichen","Eine Konformitätserklärung und das CE-Kennzeichen","Nur ein Typenschild","Eine Betriebsanweisung des Betreibers"],
+ "Sie darf erst nach Einbau und Konformitätsbewertung der Gesamtmaschine in Betrieb genommen werden."],
+["1.5","Welche Folge hat eine wesentliche Veränderung an einer bestehenden Maschine?",
+ ["Wer sie wesentlich verändert, wird Hersteller – mit neuer Risikobeurteilung, Konformitätserklärung und CE","Keine – das CE-Kennzeichen des Originalherstellers bleibt gültig","Die Maschine muss verschrottet werden","Nur das Typenschild muss erneuert werden"],
+ "Wesentlich = neue oder höhere Gefährdung, die die vorhandenen Schutzmaßnahmen nicht abdecken. Instandsetzung mit Originalteilen ist nicht wesentlich."],
+["1.5","Ab wann gilt die neue EU-Maschinenverordnung (EU) 2023/1230 direkt?",
+ ["Ab 20.01.2027","Seit 2006","Ab 01.01.2030","Sie gilt nur für Neubauten ab 2035"],
+ "Sie löst die Maschinenrichtlinie 2006/42/EG ab und gilt als Verordnung direkt, ohne Umsetzung in nationales Recht."],
+["1.5","Was ist der Unterschied zwischen Betriebsanleitung und Betriebsanweisung?",
+ ["Die Betriebsanleitung schreibt der Hersteller, die Betriebsanweisung der Betreiber bezogen auf seinen Arbeitsplatz","Beides schreibt der Hersteller","Die Betriebsanweisung schreibt der Hersteller, die Betriebsanleitung der Betreiber","Es gibt keinen Unterschied"],
+ "Die Betriebsanweisung ist verständlich, in der Sprache der Beschäftigten, hängt an der Maschine aus und ist Grundlage der Unterweisung."],
+["1.5","Welche rechtliche Folge hat die Abnahme einer Maschine?",
+ ["Gefahrübergang auf den Käufer und Beginn der Gewährleistung","Der Lieferant muss die Maschine erneut konstruieren","Die Gewährleistung endet","Der Kaufvertrag wird rückgängig gemacht"],
+ "Außerdem wird die (Rest-)Zahlung fällig. Bei wesentlichen Mängeln: Abnahme verweigern."],
+["1.5","Was berücksichtigt der Maschinenfähigkeitsindex cmk zusätzlich zum cm-Wert?",
+ ["Die Lage des Mittelwerts in der Toleranz","Die Anzahl der Bediener","Die Taktzeit","Den Energieverbrauch"],
+ "cm vergleicht nur die Streuung (6·s) mit der Toleranz. cmk nimmt den Abstand des Mittelwerts zur näheren Grenze. Ist cmk zu klein, cm aber gut: Mittelwert zur Toleranzmitte verschieben."],
+["1.5","Wie lautet die richtige Reihenfolge der Vier-Stufen-Methode?",
+ ["Vorbereiten – Vormachen – Nachmachen – Üben","Vormachen – Vorbereiten – Üben – Nachmachen","Erklären – Testen – Bewerten – Wiederholen","Üben – Nachmachen – Vormachen – Vorbereiten"],
+ "1. Ziel erklären, Interesse wecken. 2. Zeigen und erklären. 3. Mitarbeiter führt aus und erklärt. 4. Selbstständig üben, Kontrolle, Lob."],
+["1.5","Wie prüfen Sie am besten, ob eine Einweisung verstanden wurde?",
+ ["Den Mitarbeiter zeigen und in eigenen Worten erklären lassen","Fragen: »Alles klar?«","Die Betriebsanleitung aushändigen","Unterschrift unter den Unterweisungsnachweis reichen lassen"],
+ "Eine Unterweisung, die nicht verstanden wurde, gilt als nicht durchgeführt (ArbSchG, DGUV Vorschrift 1)."],
+["1.5","Welche Kennfarbe hat eine Druckluftleitung nach DIN 2403?",
+ ["Grau","Grün","Blau","Gelb"],
+ "Wasser grün, Wasserdampf rot, Luft grau, brennbare Gase gelb + rot, Säuren orange, Laugen violett, Sauerstoff blau."],
+["1.5","Welche Kennfarbe hat eine Sauerstoffleitung nach DIN 2403?",
+ ["Blau","Grau","Orange","Violett"],
+ "Sauerstoff hat die Gruppe 0 und die Farbe Blau."],
+["1.5","Was bedeutet Poka Yoke?",
+ ["Fehlbedienung wird konstruktiv verhindert","Eine japanische Reinigungsmethode","Ein Verfahren zur Lärmmessung","Ein Prüfverfahren für Druckbehälter"],
+ "Beispiel: Stecker, die nur in einer Richtung passen. Weitere Mittel gegen Bedienfehler: klare Bedienoberfläche, Bedienhilfen mit Bildern."],
+];
+
+const CHAPTERS = {
+  "1.1":"Kraft- und Arbeitsmaschinen, Hebe- und Fördermittel",
+  "1.2":"Instandhaltung planen und überwachen",
+  "1.3":"Schwachstellen, Schäden, Eingriffszeitpunkte",
+  "1.4":"Energieversorgung im Betrieb",
+  "1.5":"Aufstellen und Inbetriebnehmen"
+};
+const KEY = "bt-quiz-1-v1";
+const $ = id => document.getElementById(id);
+let S = null, timer = null;
+
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)); }catch(e){ return null; } }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function fmt(ms){ const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
+  return (h? h+":"+String(m).padStart(2,"0") : m)+":"+String(x).padStart(2,"0"); }
+function esc(t){ return t.replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function show(v){ ["v-start","v-quiz","v-result"].forEach(x=>$(x).classList.toggle("hidden", x!==v)); window.scrollTo(0,0); }
+
+function start(){
+  const name = $("name").value.trim();
+  if(!name){ $("name-err").textContent = "Bitte geben Sie Ihren Namen ein."; $("name").focus(); return; }
+  S = { name, start: Date.now(), end: null, i: 0,
+        order: Q.map((q,i)=>shuffle([0,1,2,3])), answers: Q.map(()=>null) };
+  save(); openQuiz();
+}
+function openQuiz(){
+  show("v-quiz"); buildGrid(); render();
+  clearInterval(timer); timer = setInterval(()=>{ $("q-time").textContent = fmt(Date.now()-S.start); }, 1000);
+}
+function buildGrid(){
+  const g = $("q-grid"); g.innerHTML = "";
+  Q.forEach((q,i)=>{ const b=document.createElement("button"); b.textContent=i+1; b.id="g"+i;
+    b.setAttribute("aria-label","Frage "+(i+1)); b.onclick=()=>{ S.i=i; save(); render(); window.scrollTo(0,0); }; g.appendChild(b); });
+}
+function render(){
+  const i=S.i, q=Q[i];
+  $("q-chap").textContent = "Kapitel "+q[0]+" · "+CHAPTERS[q[0]];
+  $("q-pos").textContent = "Frage "+(i+1)+" / "+Q.length;
+  $("q-time").textContent = fmt(Date.now()-S.start);
+  $("q-text").textContent = q[1];
+  const box=$("q-opts"); box.innerHTML="";
+  S.order[i].forEach((oi,pos)=>{
+    const b=document.createElement("button"); b.className="opt";
+    b.setAttribute("aria-pressed", S.answers[i]===oi ? "true":"false");
+    b.innerHTML='<span class="key">'+"ABCD"[pos]+'</span><span>'+esc(q[2][oi])+'</span>';
+    b.onclick=()=>{ S.answers[i]=oi; save(); render(); };
+    box.appendChild(b);
+  });
+  $("btn-prev").disabled = i===0;
+  $("btn-next").textContent = i===Q.length-1 ? "Zur Abgabe" : "Weiter";
+  const n = S.answers.filter(a=>a!==null).length;
+  $("q-answered").textContent = n+" von "+Q.length;
+  $("q-prog").style.width = (n/Q.length*100)+"%";
+  Q.forEach((_,k)=>{ const b=$("g"+k); b.classList.toggle("done", S.answers[k]!==null); b.classList.toggle("cur", k===i); });
+}
+function askSubmit(){
+  const open = S.answers.filter(a=>a===null).length;
+  $("m-text").textContent = open ? "Es sind noch "+open+" Fragen unbeantwortet. Unbeantwortete Fragen zählen als falsch. Nach dem Abgeben können Sie nichts mehr ändern."
+                                 : "Alle Fragen sind beantwortet. Nach dem Abgeben können Sie nichts mehr ändern.";
+  $("m-submit").classList.add("show"); $("m-ok").focus();
+}
+function submit(){
+  $("m-submit").classList.remove("show");
+  S.end = Date.now(); save(); clearInterval(timer); result();
+}
+let filterWrong = true;
+function result(){
+  show("v-result");
+  const ok = Q.map((q,i)=>S.answers[i]===0);
+  const n = ok.filter(Boolean).length, pct = Math.round(n/Q.length*100);
+  $("r-who").textContent = S.name+" · "+new Date(S.end).toLocaleDateString("de-DE");
+  $("r-score").textContent = n+" / "+Q.length;
+  $("r-pct").textContent = pct+" % richtig";
+  $("r-time").textContent = "· Bearbeitungszeit "+fmt(S.end-S.start);
+  $("r-bar").style.width = pct+"%";
+  const c=$("r-chap"); c.innerHTML="";
+  Object.keys(CHAPTERS).forEach(k=>{
+    const idx=Q.map((q,i)=>i).filter(i=>Q[i][0]===k), r=idx.filter(i=>ok[i]).length;
+    c.insertAdjacentHTML("beforeend",'<span><b>'+k+'</b> <span class="muted">'+CHAPTERS[k]+'</span></span><div class="bar"><i style="width:'+(r/idx.length*100)+'%"></i></div><span class="num">'+r+' / '+idx.length+'</span>');
+  });
+  renderReview(ok);
+}
+function renderReview(ok){
+  ok = ok || Q.map((q,i)=>S.answers[i]===0);
+  $("flt-wrong").setAttribute("aria-pressed", filterWrong); $("flt-all").setAttribute("aria-pressed", !filterWrong);
+  const L=$("r-list"); L.innerHTML="";
+  let shown=0;
+  Q.forEach((q,i)=>{
+    if(filterWrong && ok[i]) return; shown++;
+    const a=S.answers[i];
+    const mine = a===null ? '<div class="tag no"><b>Ihre Antwort:</b><span>keine Antwort</span></div>'
+               : ok[i] ? '' : '<div class="tag no"><b>Ihre Antwort:</b><span>'+esc(q[2][a])+'</span></div>';
+    L.insertAdjacentHTML("beforeend",
+      '<div class="card item'+(ok[i]?'':' wrong')+'"><span class="chip">Frage '+(i+1)+' · Kapitel '+q[0]+(ok[i]?' · richtig':' · falsch')+'</span>'+
+      '<p style="font-weight:600">'+esc(q[1])+'</p><div class="ans">'+mine+
+      '<div class="tag ok"><b>Richtig:</b><span>'+esc(q[2][0])+'</span></div></div>'+
+      '<p class="expl">'+esc(q[3])+'</p></div>');
+  });
+  if(!shown) L.innerHTML='<div class="card"><p>Alle Fragen richtig beantwortet. Sehr gut!</p></div>';
+}
+
+$("f-count").textContent = Q.length;
+$("btn-start").onclick = start;
+$("name").addEventListener("keydown", e=>{ if(e.key==="Enter") start(); });
+$("btn-prev").onclick = ()=>{ if(S.i>0){ S.i--; save(); render(); window.scrollTo(0,0);} };
+$("btn-next").onclick = ()=>{ if(S.i<Q.length-1){ S.i++; save(); render(); window.scrollTo(0,0);} else askSubmit(); };
+$("btn-submit").onclick = askSubmit;
+$("m-cancel").onclick = ()=>$("m-submit").classList.remove("show");
+$("m-ok").onclick = submit;
+$("flt-wrong").onclick = ()=>{ filterWrong=true; renderReview(); };
+$("flt-all").onclick = ()=>{ filterWrong=false; renderReview(); };
+$("btn-restart").onclick = ()=>{ try{ localStorage.removeItem(KEY); }catch(e){} S=null; $("name").value=""; show("v-start"); $("btn-resume").classList.add("hidden"); };
+document.addEventListener("keydown", e=>{
+  if($("v-quiz").classList.contains("hidden") || $("m-submit").classList.contains("show")) return;
+  if(e.target.tagName==="INPUT") return;
+  const k="abcd".indexOf(e.key.toLowerCase()); if(k>=0){ S.answers[S.i]=S.order[S.i][k]; save(); render(); }
+  if(e.key==="ArrowRight") $("btn-next").click(); if(e.key==="ArrowLeft") $("btn-prev").click();
+});
+
+const prev = load();
+if(prev && prev.answers && prev.answers.length===Q.length){
+  S = prev;
+  if(S.end){ result(); }
+  else { $("name").value=S.name; $("btn-resume").classList.remove("hidden"); $("btn-resume").onclick=openQuiz; }
+}
+</script>
+</body>
+</html>
